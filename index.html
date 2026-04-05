@@ -5,19 +5,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tournament Hub</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #000;
+            border-bottom: 3px solid #000;
+            padding-bottom: 15px;
+        }
+        
+        h2 {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #000;
+            border-left: 4px solid #000;
+            padding-left: 10px;
+        }
+        
+        .search-container {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        input[type="text"] {
+            padding: 10px;
+            border: 2px solid #000;
+            border-radius: 4px;
+            font-size: 14px;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 20px 0 40px 0;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-        th, td {
-            padding: 10px;
-            border: 1px solid #dddddd;
-            text-align: left;
-        }
+        
         th {
+            background-color: #000;
+            color: white;
+            padding: 12px;
+            text-align: left;
             cursor: pointer;
-            background-color: #f2f2f2;
+            font-weight: bold;
+            border: 1px solid #000;
+        }
+        
+        th:hover {
+            background-color: #333;
+        }
+        
+        td {
+            padding: 12px;
+            border: 1px solid #ddd;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tbody tr:hover {
+            background-color: #efefef;
+            cursor: pointer;
+        }
+        
+        .entry-deadline {
+            background-color: #28a745;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .withdrawal-deadline {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: bold;
+        }
+        
+        .freeze-deadline {
+            background-color: #dc3545;
+            color: white;
+            font-weight: bold;
+        }
+        
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #000;
+            color: #666;
         }
     </style>
     <script>
@@ -33,12 +139,10 @@
                 return aColText > bColText ? (1 * dirModifier) : (-1 * dirModifier);
             });
 
-            // Remove all existing TRs from the table
             while (tbody.firstChild) {
                 tbody.removeChild(tbody.firstChild);
             }
 
-            // Append the new sorted rows
             tbody.append(...sortedRows);
         }
 
@@ -60,13 +164,14 @@
     </script>
 </head>
 <body>
-    <h1>Tournament Hub</h1>
+    <h1>🏆 Tournament Hub 2026</h1>
 
-    <h2>Search Tournaments</h2>
-    <input type="text" id="searchName" placeholder="Search by tournament name" onkeyup="filterTable()">
-    <input type="text" id="searchLocation" placeholder="Search by location" onkeyup="filterTable()">
+    <div class="search-container">
+        <input type="text" id="searchName" placeholder="Search by tournament name" onkeyup="filterTable()">
+        <input type="text" id="searchLocation" placeholder="Search by location" onkeyup="filterTable()">
+    </div>
 
-    <h2>USTA Tournaments</h2>
+    <h2>USTA Tournaments 2026</h2>
     <table id="ustaTable">
         <thead>
             <tr>
@@ -75,26 +180,96 @@
                 <th onclick="sortTable(this.closest('table'), 2, false)">Entry Deadline</th>
                 <th onclick="sortTable(this.closest('table'), 3, false)">Withdrawal Deadline</th>
                 <th onclick="sortTable(this.closest('table'), 4, false)">Freeze Deadline</th>
-                <th onclick="sortTable(this.closest('table'), 5, false)">Tournament Director Number</th>
-                <th onclick="sortTable(this.closest('table'), 6, false)">Link</th>
-                <th onclick="sortTable(this.closest('table'), 7, false)">Tournament Level</th>
+                <th onclick="sortTable(this.closest('table'), 5, false)">Tournament Director</th>
+                <th onclick="sortTable(this.closest('table'), 6, false)">Level</th>
+                <th onclick="sortTable(this.closest('table'), 7, false)">Link</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td>USTA Spring Open</td>
                 <td>New York, NY</td>
-                <td>2026-05-01</td>
-                <td>2026-05-05</td>
-                <td>2026-05-10</td>
+                <td class="entry-deadline">2026-04-15</td>
+                <td class="withdrawal-deadline">2026-04-20</td>
+                <td class="freeze-deadline">2026-04-25</td>
                 <td>1234567890</td>
-                <td><a href="#">Link</a></td>
                 <td>Level 1</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>USTA Eastern Sectionals</td>
+                <td>Boston, MA</td>
+                <td class="entry-deadline">2026-05-01</td>
+                <td class="withdrawal-deadline">2026-05-08</td>
+                <td class="freeze-deadline">2026-05-15</td>
+                <td>2015551234</td>
+                <td>Level 2</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>USTA Summer Championships</td>
+                <td>Chicago, IL</td>
+                <td class="entry-deadline">2026-06-10</td>
+                <td class="withdrawal-deadline">2026-06-17</td>
+                <td class="freeze-deadline">2026-06-24</td>
+                <td>3125559876</td>
+                <td>Level 1</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>USTA Midwest Open</td>
+                <td>St. Louis, MO</td>
+                <td class="entry-deadline">2026-07-05</td>
+                <td class="withdrawal-deadline">2026-07-12</td>
+                <td class="freeze-deadline">2026-07-19</td>
+                <td>3145554321</td>
+                <td>Level 2</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>USTA Western Regional</td>
+                <td>Los Angeles, CA</td>
+                <td class="entry-deadline">2026-08-01</td>
+                <td class="withdrawal-deadline">2026-08-08</td>
+                <td class="freeze-deadline">2026-08-15</td>
+                <td>4155552468</td>
+                <td>Level 1</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>USTA Fall Classic</td>
+                <td>Dallas, TX</td>
+                <td class="entry-deadline">2026-09-10</td>
+                <td class="withdrawal-deadline">2026-09-17</td>
+                <td class="freeze-deadline">2026-09-24</td>
+                <td>2145553579</td>
+                <td>Level 2</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>USTA National Championships</td>
+                <td>Orlando, FL</td>
+                <td class="entry-deadline">2026-10-01</td>
+                <td class="withdrawal-deadline">2026-10-08</td>
+                <td class="freeze-deadline">2026-10-15</td>
+                <td>4075551111</td>
+                <td>Level 1</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>USTA Year-End Open</td>
+                <td>Miami, FL</td>
+                <td class="entry-deadline">2026-11-05</td>
+                <td class="withdrawal-deadline">2026-11-12</td>
+                <td class="freeze-deadline">2026-11-19</td>
+                <td>3055552222</td>
+                <td>Level 2</td>
+                <td><a href="#">View</a></td>
             </tr>
         </tbody>
     </table>
 
-    <h2>Junior ITT Tournaments</h2>
+    <h2>Junior ITT Tournaments Worldwide 2026</h2>
     <table id="juniorITTTable">
         <thead>
             <tr>
@@ -103,24 +278,98 @@
                 <th onclick="sortTable(this.closest('table'), 2, false)">Entry Deadline</th>
                 <th onclick="sortTable(this.closest('table'), 3, false)">Withdrawal Deadline</th>
                 <th onclick="sortTable(this.closest('table'), 4, false)">Freeze Deadline</th>
-                <th onclick="sortTable(this.closest('table'), 5, false)">Tournament Director Number</th>
-                <th onclick="sortTable(this.closest('table'), 6, false)">Link</th>
-                <th onclick="sortTable(this.closest('table'), 7, false)">Tournament Level</th>
+                <th onclick="sortTable(this.closest('table'), 5, false)">Tournament Director</th>
+                <th onclick="sortTable(this.closest('table'), 6, false)">Level</th>
+                <th onclick="sortTable(this.closest('table'), 7, false)">Link</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>Junior ITT Summer Championships</td>
-                <td>Los Angeles, CA</td>
-                <td>2026-08-01</td>
-                <td>2026-08-05</td>
-                <td>2026-08-10</td>
-                <td>0987654321</td>
-                <td><a href="#">Link</a></td>
-                <td>Level 2</td>
+                <td>Junior ITT Spring Challenge</td>
+                <td>London, UK</td>
+                <td class="entry-deadline">2026-04-20</td>
+                <td class="withdrawal-deadline">2026-04-27</td>
+                <td class="freeze-deadline">2026-05-04</td>
+                <td>442071234567</td>
+                <td>U18</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>Junior ITT European Open</td>
+                <td>Paris, France</td>
+                <td class="entry-deadline">2026-05-15</td>
+                <td class="withdrawal-deadline">2026-05-22</td>
+                <td class="freeze-deadline">2026-05-29</td>
+                <td>33123456789</td>
+                <td>U16</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>Junior ITT Australian Championships</td>
+                <td>Sydney, Australia</td>
+                <td class="entry-deadline">2026-06-01</td>
+                <td class="withdrawal-deadline">2026-06-08</td>
+                <td class="freeze-deadline">2026-06-15</td>
+                <td>61212345678</td>
+                <td>U14</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>Junior ITT Asian Cup</td>
+                <td>Tokyo, Japan</td>
+                <td class="entry-deadline">2026-07-10</td>
+                <td class="withdrawal-deadline">2026-07-17</td>
+                <td class="freeze-deadline">2026-07-24</td>
+                <td>81312345678</td>
+                <td>U18</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>Junior ITT Summer Masters</td>
+                <td>Toronto, Canada</td>
+                <td class="entry-deadline">2026-07-20</td>
+                <td class="withdrawal-deadline">2026-07-27</td>
+                <td class="freeze-deadline">2026-08-03</td>
+                <td>14165559999</td>
+                <td>U16</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>Junior ITT South American Open</td>
+                <td>Buenos Aires, Argentina</td>
+                <td class="entry-deadline">2026-08-05</td>
+                <td class="withdrawal-deadline">2026-08-12</td>
+                <td class="freeze-deadline">2026-08-19</td>
+                <td>541123456789</td>
+                <td>U14</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>Junior ITT African Championships</td>
+                <td>Cape Town, South Africa</td>
+                <td class="entry-deadline">2026-09-01</td>
+                <td class="withdrawal-deadline">2026-09-08</td>
+                <td class="freeze-deadline">2026-09-15</td>
+                <td>27214567890</td>
+                <td>U18</td>
+                <td><a href="#">View</a></td>
+            </tr>
+            <tr>
+                <td>Junior ITT World Finals</td>
+                <td>Dubai, UAE</td>
+                <td class="entry-deadline">2026-10-01</td>
+                <td class="withdrawal-deadline">2026-10-08</td>
+                <td class="freeze-deadline">2026-10-15</td>
+                <td>971123456789</td>
+                <td>U16</td>
+                <td><a href="#">View</a></td>
             </tr>
         </tbody>
     </table>
+
+    <footer>
+        <p>&copy; 2026 Tournament Hub. All rights reserved. | Last Updated: April 5, 2026</p>
+    </footer>
 
 </body>
 </html>
