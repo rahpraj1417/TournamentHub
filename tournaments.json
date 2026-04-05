@@ -1,0 +1,25 @@
+[  
+    {  
+        "name": "USTA Junior Tournament",  
+        "date": "2026-04-05",  
+        "location": "New York, NY",  
+        "age_categories": [  
+            "12U",  
+            "14U",  
+            "16U",  
+            "18U"  
+        ],  
+        "level": "Regional"  
+    },  
+    {  
+        "name": "ITF Junior Tournament",  
+        "date": "2026-04-10",  
+        "location": "Los Angeles, CA",  
+        "age_categories": [  
+            "14U",  
+            "16U",  
+            "18U"  
+        ],  
+        "level": "International"  
+    }  
+]
