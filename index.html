@@ -201,78 +201,226 @@
             font-size: 16px;
         }
     </style>
+    <style>
+        .loading-row td {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+        .error-row td {
+            text-align: center;
+            padding: 20px;
+            color: #dc3545;
+        }
+        .status-badge {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .status-live   { background:#28a745; color:#fff; }
+        .status-cached { background:#6c757d; color:#fff; }
+        .status-error  { background:#dc3545; color:#fff; }
+        .refresh-btn {
+            padding: 8px 14px;
+            background: #000;
+            color: #fff;
+            border: 2px solid #000;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .refresh-btn:hover { background: #333; }
+        .refresh-btn:disabled { background: #888; border-color: #888; cursor: default; }
+    </style>
     <script>
+        // ── Tab switching ──────────────────────────────────────────────────────
         function switchTab(tabName) {
-            // Hide all tab contents
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(tab => tab.classList.remove('active'));
-            
-            // Remove active class from all buttons
-            const tabButtons = document.querySelectorAll('.tab-button');
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            
-            // Show selected tab content
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
-            
-            // Add active class to clicked button
             event.target.classList.add('active');
         }
-        
+
+        // ── Sorting ────────────────────────────────────────────────────────────
         function sortTable(table, col) {
             const tbody = table.tBodies[0];
-            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const rows = Array.from(tbody.querySelectorAll('tr:not(.loading-row):not(.error-row)'));
             const isAscending = !table.dataset.sortAscending;
-
-            const sortedRows = rows.sort((a, b) => {
+            rows.sort((a, b) => {
                 const aText = a.children[col].textContent.trim();
                 const bText = b.children[col].textContent.trim();
-
                 return isAscending ? aText.localeCompare(bText) : bText.localeCompare(aText);
             });
-
             tbody.innerHTML = '';
-            sortedRows.forEach(row => tbody.appendChild(row));
+            rows.forEach(row => tbody.appendChild(row));
             table.dataset.sortAscending = isAscending;
         }
 
+        // ── Filtering ──────────────────────────────────────────────────────────
         function filterUSTATable() {
-            const nameFilter = document.getElementById('ustaSearchName').value.toLowerCase();
+            const nameFilter     = document.getElementById('ustaSearchName').value.toLowerCase();
             const locationFilter = document.getElementById('ustaSearchLocation').value.toLowerCase();
-            const levelFilter = document.getElementById('ustaLevelFilter').value;
-            
-            const table = document.getElementById('ustaTable');
-            const rows = table.getElementsByTagName('tr');
-
+            const levelFilter    = document.getElementById('ustaLevelFilter').value;
+            const rows = document.getElementById('ustaTable').getElementsByTagName('tr');
             for (let i = 1; i < rows.length; i++) {
-                const nameCell = rows[i].cells[0].textContent.toLowerCase();
-                const locationCell = rows[i].cells[1].textContent.toLowerCase();
-                const levelCell = rows[i].cells[6].textContent;
-                
-                const nameMatch = nameCell.includes(nameFilter);
-                const locationMatch = locationCell.includes(locationFilter);
-                const levelMatch = levelFilter === '' || levelCell.includes(levelFilter);
-                
-                rows[i].style.display = (nameMatch && locationMatch && levelMatch) ? '' : 'none';
+                if (rows[i].classList.contains('loading-row') || rows[i].classList.contains('error-row')) continue;
+                const cells      = rows[i].cells;
+                const nameMatch  = cells[0].textContent.toLowerCase().includes(nameFilter);
+                const locMatch   = cells[1].textContent.toLowerCase().includes(locationFilter);
+                const levelMatch = levelFilter === '' || cells[6].textContent.includes(levelFilter);
+                rows[i].style.display = (nameMatch && locMatch && levelMatch) ? '' : 'none';
             }
         }
 
         function filterITFTable() {
-            const nameFilter = document.getElementById('itfSearchName').value.toLowerCase();
-            const regionFilter = document.getElementById('itfRegionFilter').value;
-            
-            const table = document.getElementById('itfTable');
-            const rows = table.getElementsByTagName('tr');
-
+            const nameFilter   = document.getElementById('itfSearchName').value.toLowerCase();
+            const regionFilter = document.getElementById('itfRegionFilter').value.toLowerCase();
+            const rows = document.getElementById('itfTable').getElementsByTagName('tr');
             for (let i = 1; i < rows.length; i++) {
-                const nameCell = rows[i].cells[0].textContent.toLowerCase();
-                const locationCell = rows[i].cells[1].textContent.toLowerCase();
-                
-                const nameMatch = nameCell.includes(nameFilter);
-                const regionMatch = regionFilter === '' || locationCell.includes(regionFilter);
-                
+                if (rows[i].classList.contains('loading-row') || rows[i].classList.contains('error-row')) continue;
+                const cells       = rows[i].cells;
+                const nameMatch   = cells[0].textContent.toLowerCase().includes(nameFilter);
+                const regionMatch = regionFilter === '' || cells[1].textContent.toLowerCase().includes(regionFilter);
                 rows[i].style.display = (nameMatch && regionMatch) ? '' : 'none';
             }
         }
+
+        // ── Row builders ───────────────────────────────────────────────────────
+        function buildUstaRow(t) {
+            const directorHtml = t.director_name
+                ? `<span class="director-name">${escHtml(t.director_name)}</span>`
+                  + (t.director_phone
+                      ? `<br><a class="director-phone" href="tel:${escHtml(t.director_phone)}">${escHtml(t.director_phone)}</a>`
+                      : '')
+                : '—';
+            return `<tr>
+                <td>${escHtml(t.name)}</td>
+                <td>${escHtml(t.location)}</td>
+                <td class="entry-deadline">${escHtml(t.entry_deadline || '—')}</td>
+                <td class="withdrawal-deadline">${escHtml(t.withdrawal_deadline || '—')}</td>
+                <td class="freeze-deadline">${escHtml(t.freeze_deadline || '—')}</td>
+                <td class="director-info">${directorHtml}</td>
+                <td>${escHtml(t.level || '—')}</td>
+                <td>${t.tournament_url ? `<a href="${escHtml(t.tournament_url)}" target="_blank" rel="noopener noreferrer">View</a>` : '—'}</td>
+            </tr>`;
+        }
+
+        function buildItfRow(t) {
+            const directorHtml = t.director_name
+                ? `<span class="director-name">${escHtml(t.director_name)}</span>`
+                  + (t.director_phone
+                      ? `<br><a class="director-phone" href="tel:${escHtml(t.director_phone)}">${escHtml(t.director_phone)}</a>`
+                      : '')
+                : '—';
+            return `<tr>
+                <td>${escHtml(t.name)}</td>
+                <td>${escHtml(t.location)}</td>
+                <td class="entry-deadline">${escHtml(t.entry_deadline || '—')}</td>
+                <td class="withdrawal-deadline">${escHtml(t.withdrawal_deadline || '—')}</td>
+                <td class="freeze-deadline">${escHtml(t.freeze_deadline || '—')}</td>
+                <td class="director-info">${directorHtml}</td>
+                <td>${escHtml(t.level || '—')}</td>
+                <td>${t.tournament_url ? `<a href="${escHtml(t.tournament_url)}" target="_blank" rel="noopener noreferrer">View</a>` : '—'}</td>
+            </tr>`;
+        }
+
+        function escHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // ── Data loading ───────────────────────────────────────────────────────
+        function setLoadingState(tableId, colSpan) {
+            document.querySelector(`#${tableId} tbody`).innerHTML =
+                `<tr class="loading-row"><td colspan="${colSpan}">⏳ Loading tournaments…</td></tr>`;
+        }
+
+        function setErrorState(tableId, colSpan, message) {
+            document.querySelector(`#${tableId} tbody`).innerHTML =
+                `<tr class="error-row"><td colspan="${colSpan}">⚠ ${escHtml(message)}</td></tr>`;
+        }
+
+        function setStatusBadge(badgeId, type, label) {
+            const el = document.getElementById(badgeId);
+            if (!el) return;
+            el.className = `status-badge status-${type}`;
+            el.textContent = label;
+        }
+
+        async function loadUstaTournaments(forceRefresh) {
+            const tableBody = document.querySelector('#ustaTable tbody');
+            setLoadingState('ustaTable', 8);
+            setStatusBadge('ustaStatus', 'cached', 'loading…');
+            try {
+                const url = forceRefresh ? '/api/tournaments/usta?refresh=1' : '/api/tournaments/usta';
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const json = await resp.json();
+                const list = json.tournaments || [];
+                if (list.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="8" class="no-results">No USTA junior U18 tournaments found.</td></tr>';
+                } else {
+                    tableBody.innerHTML = list.map(buildUstaRow).join('');
+                }
+                const badge = json.fallback ? 'cached' : 'live';
+                const label = json.fallback ? 'fallback data' : `${list.length} tournaments`;
+                setStatusBadge('ustaStatus', badge, label);
+            } catch (err) {
+                setErrorState('ustaTable', 8, `Failed to load USTA tournaments: ${err.message}`);
+                setStatusBadge('ustaStatus', 'error', 'error');
+            }
+        }
+
+        async function loadItfTournaments(forceRefresh) {
+            const tableBody = document.querySelector('#itfTable tbody');
+            setLoadingState('itfTable', 8);
+            setStatusBadge('itfStatus', 'cached', 'loading…');
+            try {
+                const url = forceRefresh ? '/api/tournaments/itf?refresh=1' : '/api/tournaments/itf';
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const json = await resp.json();
+                const list = json.tournaments || [];
+                if (list.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="8" class="no-results">No ITF junior U18 Americas tournaments found.</td></tr>';
+                } else {
+                    tableBody.innerHTML = list.map(buildItfRow).join('');
+                }
+                const badge = json.fallback ? 'cached' : 'live';
+                const label = json.fallback ? 'fallback data' : `${list.length} tournaments`;
+                setStatusBadge('itfStatus', badge, label);
+            } catch (err) {
+                setErrorState('itfTable', 8, `Failed to load ITF tournaments: ${err.message}`);
+                setStatusBadge('itfStatus', 'error', 'error');
+            }
+        }
+
+        async function refreshAll() {
+            const btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Refreshing…';
+            try {
+                await fetch('/api/refresh', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({}) });
+            } catch (_) { /* server will refresh regardless */ }
+            await Promise.all([loadUstaTournaments(true), loadItfTournaments(true)]);
+            btn.disabled = false;
+            btn.textContent = '🔄 Refresh Data';
+        }
+
+        // Load on page ready
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUstaTournaments(false);
+            loadItfTournaments(false);
+        });
     </script>
 </head>
 <body>
@@ -286,16 +434,18 @@
 
         <!-- USTA Tab -->
         <div id="ustaTab" class="tab-content active">
-            <h2>USTA Junior Tournaments - Boys U18 (Levels 1-3)</h2>
-            
+            <h2>USTA Junior Tournaments — Boys &amp; Girls U18 (Levels 1–3)
+                <span id="ustaStatus" class="status-badge status-cached">loading…</span>
+            </h2>
+
             <div class="search-container">
                 <input type="text" id="ustaSearchName" placeholder="Search by tournament name" onkeyup="filterUSTATable()">
                 <input type="text" id="ustaSearchLocation" placeholder="Search by location" onkeyup="filterUSTATable()">
                 <select id="ustaLevelFilter" onchange="filterUSTATable()">
                     <option value="">All Levels</option>
-                    <option value="Level 1">Level 1</option>
-                    <option value="Level 2">Level 2</option>
-                    <option value="Level 3">Level 3</option>
+                    <option value="L1">L1 — Level 1</option>
+                    <option value="L2">L2 — Level 2</option>
+                    <option value="L3">L3 — Level 3</option>
                 </select>
             </div>
 
@@ -313,94 +463,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>USTA Spring Open Boys U18</td>
-                        <td>New York, NY</td>
-                        <td class="entry-deadline">2026-04-15</td>
-                        <td class="withdrawal-deadline">2026-04-20</td>
-                        <td class="freeze-deadline">2026-04-25</td>
-                        <td class="director-info"><span class="director-name">John Smith</span><br><a class="director-phone" href="tel:+12125551234">(212) 555-1234</a></td>
-                        <td>Level 1</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Eastern Juniors</td>
-                        <td>Boston, MA</td>
-                        <td class="entry-deadline">2026-05-01</td>
-                        <td class="withdrawal-deadline">2026-05-08</td>
-                        <td class="freeze-deadline">2026-05-15</td>
-                        <td class="director-info"><span class="director-name">Sarah Johnson</span><br><a class="director-phone" href="tel:+16175551234">(617) 555-1234</a></td>
-                        <td>Level 2</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Summer Junior Championships</td>
-                        <td>Chicago, IL</td>
-                        <td class="entry-deadline">2026-06-10</td>
-                        <td class="withdrawal-deadline">2026-06-17</td>
-                        <td class="freeze-deadline">2026-06-24</td>
-                        <td class="director-info"><span class="director-name">Michael Chen</span><br><a class="director-phone" href="tel:+13125559876">(312) 555-9876</a></td>
-                        <td>Level 1</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Midwest Juniors Open</td>
-                        <td>St. Louis, MO</td>
-                        <td class="entry-deadline">2026-07-05</td>
-                        <td class="withdrawal-deadline">2026-07-12</td>
-                        <td class="freeze-deadline">2026-07-19</td>
-                        <td class="director-info"><span class="director-name">Emily Rodriguez</span><br><a class="director-phone" href="tel:+13145554321">(314) 555-4321</a></td>
-                        <td>Level 3</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Western Junior Regional</td>
-                        <td>Los Angeles, CA</td>
-                        <td class="entry-deadline">2026-08-01</td>
-                        <td class="withdrawal-deadline">2026-08-08</td>
-                        <td class="freeze-deadline">2026-08-15</td>
-                        <td class="director-info"><span class="director-name">David Thompson</span><br><a class="director-phone" href="tel:+14155552468">(415) 555-2468</a></td>
-                        <td>Level 1</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Fall Junior Classic</td>
-                        <td>Dallas, TX</td>
-                        <td class="entry-deadline">2026-09-10</td>
-                        <td class="withdrawal-deadline">2026-09-17</td>
-                        <td class="freeze-deadline">2026-09-24</td>
-                        <td class="director-info"><span class="director-name">Jessica Martinez</span><br><a class="director-phone" href="tel:+12145553579">(214) 555-3579</a></td>
-                        <td>Level 2</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA National Junior Championships</td>
-                        <td>Orlando, FL</td>
-                        <td class="entry-deadline">2026-10-01</td>
-                        <td class="withdrawal-deadline">2026-10-08</td>
-                        <td class="freeze-deadline">2026-10-15</td>
-                        <td class="director-info"><span class="director-name">Robert Wilson</span><br><a class="director-phone" href="tel:+14075551111">(407) 555-1111</a></td>
-                        <td>Level 1</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Year-End Junior Open</td>
-                        <td>Miami, FL</td>
-                        <td class="entry-deadline">2026-11-05</td>
-                        <td class="withdrawal-deadline">2026-11-12</td>
-                        <td class="freeze-deadline">2026-11-19</td>
-                        <td class="director-info"><span class="director-name">Lisa Anderson</span><br><a class="director-phone" href="tel:+13055552222">(305) 555-2222</a></td>
-                        <td>Level 3</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
+                    <tr class="loading-row"><td colspan="8">⏳ Loading USTA tournaments…</td></tr>
                 </tbody>
             </table>
         </div>
 
         <!-- ITF Tab -->
         <div id="itfTab" class="tab-content">
-            <h2>ITF Junior Tournaments - North & South America</h2>
-            
+            <h2>ITF Junior Tournaments — North &amp; South America
+                <span id="itfStatus" class="status-badge status-cached">loading…</span>
+            </h2>
+
             <div class="search-container">
                 <input type="text" id="itfSearchName" placeholder="Search by tournament name" onkeyup="filterITFTable()">
                 <select id="itfRegionFilter" onchange="filterITFTable()">
@@ -424,93 +497,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>ITF Junior Spring Challenge</td>
-                        <td>Toronto, Canada - North America</td>
-                        <td class="entry-deadline">2026-04-20</td>
-                        <td class="withdrawal-deadline">2026-04-27</td>
-                        <td class="freeze-deadline">2026-05-04</td>
-                        <td class="director-info"><span class="director-name">James Lee</span><br><a class="director-phone" href="tel:+14165559999">(416) 555-9999</a></td>
-                        <td>U18</td>
-                        <td><a href="https://www.itftennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>ITF Junior Open - Mexico</td>
-                        <td>Mexico City, Mexico - North America</td>
-                        <td class="entry-deadline">2026-05-10</td>
-                        <td class="withdrawal-deadline">2026-05-17</td>
-                        <td class="freeze-deadline">2026-05-24</td>
-                        <td class="director-info"><span class="director-name">Carlos Hernandez</span><br><a class="director-phone" href="tel:+525551234567">(525) 555-1234</a></td>
-                        <td>U16</td>
-                        <td><a href="https://www.itftennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>ITF Junior Summer Masters</td>
-                        <td>Vancouver, Canada - North America</td>
-                        <td class="entry-deadline">2026-06-15</td>
-                        <td class="withdrawal-deadline">2026-06-22</td>
-                        <td class="freeze-deadline">2026-06-29</td>
-                        <td class="director-info"><span class="director-name">Patricia Brown</span><br><a class="director-phone" href="tel:+16045551111">(604) 555-1111</a></td>
-                        <td>U18</td>
-                        <td><a href="https://www.itftennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>ITF Junior Americas Cup</td>
-                        <td>Miami, USA - North America</td>
-                        <td class="entry-deadline">2026-07-01</td>
-                        <td class="withdrawal-deadline">2026-07-08</td>
-                        <td class="freeze-deadline">2026-07-15</td>
-                        <td class="director-info"><span class="director-name">Maria Garcia</span><br><a class="director-phone" href="tel:+13055552468">(305) 555-2468</a></td>
-                        <td>U16</td>
-                        <td><a href="https://www.itftennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>ITF Junior South American Open</td>
-                        <td>Buenos Aires, Argentina - South America</td>
-                        <td class="entry-deadline">2026-08-05</td>
-                        <td class="withdrawal-deadline">2026-08-12</td>
-                        <td class="freeze-deadline">2026-08-19</td>
-                        <td class="director-info"><span class="director-name">Diego López</span><br><a class="director-phone" href="tel:+541123456789">(541) 123-4567</a></td>
-                        <td>U18</td>
-                        <td><a href="https://www.itftennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>ITF Junior Colombia Tournament</td>
-                        <td>Bogotá, Colombia - South America</td>
-                        <td class="entry-deadline">2026-08-20</td>
-                        <td class="withdrawal-deadline">2026-08-27</td>
-                        <td class="freeze-deadline">2026-09-03</td>
-                        <td class="director-info"><span class="director-name">Juan Morales</span><br><a class="director-phone" href="tel:+5715559876">(571) 555-9876</a></td>
-                        <td>U16</td>
-                        <td><a href="https://www.itftennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>ITF Junior Brazil Championship</td>
-                        <td>São Paulo, Brazil - South America</td>
-                        <td class="entry-deadline">2026-09-10</td>
-                        <td class="withdrawal-deadline">2026-09-17</td>
-                        <td class="freeze-deadline">2026-09-24</td>
-                        <td class="director-info"><span class="director-name">Ana Silva</span><br><a class="director-phone" href="tel:+551112345678">(551) 112-3456</a></td>
-                        <td>U18</td>
-                        <td><a href="https://www.itftennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>ITF Junior Chile Open</td>
-                        <td>Santiago, Chile - South America</td>
-                        <td class="entry-deadline">2026-10-05</td>
-                        <td class="withdrawal-deadline">2026-10-12</td>
-                        <td class="freeze-deadline">2026-10-19</td>
-                        <td class="director-info"><span class="director-name">Pablo Flores</span><br><a class="director-phone" href="tel:+562223456789">(562) 223-4567</a></td>
-                        <td>U16</td>
-                        <td><a href="https://www.itftennis.com" target="_blank">View</a></td>
-                    </tr>
+                    <tr class="loading-row"><td colspan="8">⏳ Loading ITF tournaments…</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <footer>
-        <p>&copy; 2026 Tournament Hub. All rights reserved. | Last Updated: April 5, 2026</p>
+        <p>
+            <button id="refreshBtn" class="refresh-btn" onclick="refreshAll()">🔄 Refresh Data</button>
+        </p>
+        <p>&copy; 2026 Tournament Hub. All rights reserved.</p>
     </footer>
 
 </body>
