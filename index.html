@@ -3,41 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
     <title>Tournament Hub</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #dddddd;
+            text-align: left;
+        }
+        th {
+            cursor: pointer;
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script>
+        function sortTable(table, col, reverse) {
+            const dirModifier = reverse ? -1 : 1;
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            const sortedRows = rows.sort((a, b) => {
+                const aColText = a.children[col].textContent.trim();
+                const bColText = b.children[col].textContent.trim();
+
+                return aColText > bColText ? (1 * dirModifier) : (-1 * dirModifier);
+            });
+
+            // Remove all existing TRs from the table
+            while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+            }
+
+            // Append the new sorted rows
+            tbody.append(...sortedRows);
+        }
+
+        function filterTable() {
+            const searchInputName = document.getElementById('searchName').value.toLowerCase();
+            const searchInputLocation = document.getElementById('searchLocation').value.toLowerCase();
+            const tables = document.querySelectorAll('table');
+
+            tables.forEach(table => {
+                const rows = table.getElementsByTagName('tr');
+                for (let i = 1; i < rows.length; i++) {
+                    const nameCell = rows[i].cells[0].textContent.toLowerCase();
+                    const locationCell = rows[i].cells[1].textContent.toLowerCase();
+                    const isMatch = nameCell.includes(searchInputName) && locationCell.includes(searchInputLocation);
+                    rows[i].style.display = isMatch ? '' : 'none';
+                }
+            });
+        }
+    </script>
 </head>
 <body>
-    <header>
-        <h1>Welcome to the Tournament Hub</h1>
-        <nav>
-            <ul>
-                <li><a href="#home">Home</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#tournaments">Tournaments</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
-    <main>
-        <section id="home">
-            <h2>Home</h2>
-            <p>Your one-stop hub for tournament information!</p>
-        </section>
-        <section id="about">
-            <h2>About</h2>
-            <p>Learn more about our tournaments and events.</p>
-        </section>
-        <section id="tournaments">
-            <h2>Tournaments</h2>
-            <p>Check out our upcoming tournaments.</p>
-        </section>
-        <section id="contact">
-            <h2>Contact Us</h2>
-            <p>Get in touch for more information.</p>
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2026 Tournament Hub. All rights reserved.</p>
-    </footer>
+    <h1>Tournament Hub</h1>
+
+    <h2>Search Tournaments</h2>
+    <input type="text" id="searchName" placeholder="Search by tournament name" onkeyup="filterTable()">
+    <input type="text" id="searchLocation" placeholder="Search by location" onkeyup="filterTable()">
+
+    <h2>USTA Tournaments</h2>
+    <table id="ustaTable">
+        <thead>
+            <tr>
+                <th onclick="sortTable(this.closest('table'), 0, false)">Tournament Name</th>
+                <th onclick="sortTable(this.closest('table'), 1, false)">Location</th>
+                <th onclick="sortTable(this.closest('table'), 2, false)">Entry Deadline</th>
+                <th onclick="sortTable(this.closest('table'), 3, false)">Withdrawal Deadline</th>
+                <th onclick="sortTable(this.closest('table'), 4, false)">Freeze Deadline</th>
+                <th onclick="sortTable(this.closest('table'), 5, false)">Tournament Director Number</th>
+                <th onclick="sortTable(this.closest('table'), 6, false)">Link</th>
+                <th onclick="sortTable(this.closest('table'), 7, false)">Tournament Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>USTA Spring Open</td>
+                <td>New York, NY</td>
+                <td>2026-05-01</td>
+                <td>2026-05-05</td>
+                <td>2026-05-10</td>
+                <td>1234567890</td>
+                <td><a href="#">Link</a></td>
+                <td>Level 1</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Junior ITT Tournaments</h2>
+    <table id="juniorITTTable">
+        <thead>
+            <tr>
+                <th onclick="sortTable(this.closest('table'), 0, false)">Tournament Name</th>
+                <th onclick="sortTable(this.closest('table'), 1, false)">Location</th>
+                <th onclick="sortTable(this.closest('table'), 2, false)">Entry Deadline</th>
+                <th onclick="sortTable(this.closest('table'), 3, false)">Withdrawal Deadline</th>
+                <th onclick="sortTable(this.closest('table'), 4, false)">Freeze Deadline</th>
+                <th onclick="sortTable(this.closest('table'), 5, false)">Tournament Director Number</th>
+                <th onclick="sortTable(this.closest('table'), 6, false)">Link</th>
+                <th onclick="sortTable(this.closest('table'), 7, false)">Tournament Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Junior ITT Summer Championships</td>
+                <td>Los Angeles, CA</td>
+                <td>2026-08-01</td>
+                <td>2026-08-05</td>
+                <td>2026-08-10</td>
+                <td>0987654321</td>
+                <td><a href="#">Link</a></td>
+                <td>Level 2</td>
+            </tr>
+        </tbody>
+    </table>
+
 </body>
 </html>
