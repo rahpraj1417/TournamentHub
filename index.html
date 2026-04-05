@@ -362,6 +362,48 @@
             .main-content { padding: 14px 12px 80px; }
             input[type="text"], select { min-width: 100%; }
         }
+
+        .loading-row td {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error-row td {
+            text-align: center;
+            padding: 20px;
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .refresh-btn {
+            padding: 10px 20px;
+            background-color: #000;
+            color: white;
+            border: 2px solid #000;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background-color: #333;
+        }
+
+        .refresh-btn:disabled {
+            background-color: #999;
+            border-color: #999;
+            cursor: not-allowed;
+        }
+
+        .last-updated {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
     </style>
     <script>
         // ── Theme toggle ──
@@ -445,6 +487,86 @@
                 rows[i].style.display = (nameMatch && regionMatch) ? '' : 'none';
             }
         }
+
+        // ---------------------------------------------------------------
+        // Dynamic USTA tournament loading
+        // ---------------------------------------------------------------
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function renderUSTARow(t) {
+            const phone = t.director_phone
+                ? `<br><a class="director-phone" href="tel:${escapeHtml(t.director_phone.replace(/\D/g, ''))}">${escapeHtml(t.director_phone)}</a>`
+                : '';
+            return `<tr>
+                <td>${escapeHtml(t.name)}</td>
+                <td>${escapeHtml(t.location)}</td>
+                <td class="entry-deadline">${escapeHtml(t.entry_deadline)}</td>
+                <td class="withdrawal-deadline">${escapeHtml(t.withdrawal_deadline)}</td>
+                <td class="freeze-deadline">${escapeHtml(t.freeze_deadline)}</td>
+                <td class="director-info"><span class="director-name">${escapeHtml(t.director_name)}</span>${phone}</td>
+                <td>${escapeHtml(t.level)}</td>
+                <td><a href="${escapeHtml(t.tournament_url)}" target="_blank" rel="noopener noreferrer">View</a></td>
+            </tr>`;
+        }
+
+        function setUSTAStatus(message, isError) {
+            const tbody = document.querySelector('#ustaTable tbody');
+            const cls = isError ? 'error-row' : 'loading-row';
+            tbody.innerHTML = `<tr class="${cls}"><td colspan="8">${escapeHtml(message)}</td></tr>`;
+        }
+
+        async function loadUSTATournaments() {
+            setUSTAStatus('Loading tournaments from USTA API…', false);
+            try {
+                const response = await fetch('/api/tournaments');
+                if (!response.ok) {
+                    throw new Error(`/api/tournaments returned ${response.status}`);
+                }
+                const tournaments = await response.json();
+
+                const tbody = document.querySelector('#ustaTable tbody');
+                if (!Array.isArray(tournaments) || tournaments.length === 0) {
+                    setUSTAStatus('No USTA junior U18 tournaments found. Run npm run scrape to fetch data.', false);
+                    return;
+                }
+
+                tbody.innerHTML = tournaments.map(renderUSTARow).join('');
+                const el = document.getElementById('ustaLastUpdated');
+                if (el) el.textContent = 'Last updated: ' + new Date().toLocaleString();
+            } catch (err) {
+                setUSTAStatus(
+                    'Unable to load live data. Start the backend server with: node server.js',
+                    true
+                );
+                console.error('Failed to load tournaments:', err);
+            }
+        }
+
+        async function refreshUSTAData() {
+            const btn = document.getElementById('refreshBtn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Refreshing…'; }
+            try {
+                const response = await fetch('/api/refresh', { method: 'POST' });
+                if (!response.ok) throw new Error(`/api/refresh returned ${response.status}`);
+                await loadUSTATournaments();
+            } catch (err) {
+                console.error('Refresh failed:', err);
+                alert('Refresh failed. Make sure the backend server is running.');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '🔄 Refresh Data'; }
+            }
+        }
+
+        // Load USTA data when the page is ready
+        document.addEventListener('DOMContentLoaded', loadUSTATournaments);
     </script>
 </head>
 <body>
@@ -476,7 +598,9 @@
                     <option value="Level 2">Level 2</option>
                     <option value="Level 3">Level 3</option>
                 </select>
+                <button id="refreshBtn" class="refresh-btn" onclick="refreshUSTAData()">🔄 Refresh Data</button>
             </div>
+            <div id="ustaLastUpdated" class="last-updated"></div>
 
             <div class="table-wrapper">
             <table id="ustaTable">
@@ -493,86 +617,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>USTA Spring Open Boys U18</td>
-                        <td>New York, NY</td>
-                        <td class="entry-deadline">2026-04-15</td>
-                        <td class="withdrawal-deadline">2026-04-20</td>
-                        <td class="freeze-deadline">2026-04-25</td>
-                        <td class="director-info"><span class="director-name">John Smith</span><br><a class="director-phone" href="tel:+12125551234">(212) 555-1234</a></td>
-                        <td>Level 1</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Eastern Juniors</td>
-                        <td>Boston, MA</td>
-                        <td class="entry-deadline">2026-05-01</td>
-                        <td class="withdrawal-deadline">2026-05-08</td>
-                        <td class="freeze-deadline">2026-05-15</td>
-                        <td class="director-info"><span class="director-name">Sarah Johnson</span><br><a class="director-phone" href="tel:+16175551234">(617) 555-1234</a></td>
-                        <td>Level 2</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Summer Junior Championships</td>
-                        <td>Chicago, IL</td>
-                        <td class="entry-deadline">2026-06-10</td>
-                        <td class="withdrawal-deadline">2026-06-17</td>
-                        <td class="freeze-deadline">2026-06-24</td>
-                        <td class="director-info"><span class="director-name">Michael Chen</span><br><a class="director-phone" href="tel:+13125559876">(312) 555-9876</a></td>
-                        <td>Level 1</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Midwest Juniors Open</td>
-                        <td>St. Louis, MO</td>
-                        <td class="entry-deadline">2026-07-05</td>
-                        <td class="withdrawal-deadline">2026-07-12</td>
-                        <td class="freeze-deadline">2026-07-19</td>
-                        <td class="director-info"><span class="director-name">Emily Rodriguez</span><br><a class="director-phone" href="tel:+13145554321">(314) 555-4321</a></td>
-                        <td>Level 3</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Western Junior Regional</td>
-                        <td>Los Angeles, CA</td>
-                        <td class="entry-deadline">2026-08-01</td>
-                        <td class="withdrawal-deadline">2026-08-08</td>
-                        <td class="freeze-deadline">2026-08-15</td>
-                        <td class="director-info"><span class="director-name">David Thompson</span><br><a class="director-phone" href="tel:+14155552468">(415) 555-2468</a></td>
-                        <td>Level 1</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Fall Junior Classic</td>
-                        <td>Dallas, TX</td>
-                        <td class="entry-deadline">2026-09-10</td>
-                        <td class="withdrawal-deadline">2026-09-17</td>
-                        <td class="freeze-deadline">2026-09-24</td>
-                        <td class="director-info"><span class="director-name">Jessica Martinez</span><br><a class="director-phone" href="tel:+12145553579">(214) 555-3579</a></td>
-                        <td>Level 2</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA National Junior Championships</td>
-                        <td>Orlando, FL</td>
-                        <td class="entry-deadline">2026-10-01</td>
-                        <td class="withdrawal-deadline">2026-10-08</td>
-                        <td class="freeze-deadline">2026-10-15</td>
-                        <td class="director-info"><span class="director-name">Robert Wilson</span><br><a class="director-phone" href="tel:+14075551111">(407) 555-1111</a></td>
-                        <td>Level 1</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
-                    <tr>
-                        <td>USTA Year-End Junior Open</td>
-                        <td>Miami, FL</td>
-                        <td class="entry-deadline">2026-11-05</td>
-                        <td class="withdrawal-deadline">2026-11-12</td>
-                        <td class="freeze-deadline">2026-11-19</td>
-                        <td class="director-info"><span class="director-name">Lisa Anderson</span><br><a class="director-phone" href="tel:+13055552222">(305) 555-2222</a></td>
-                        <td>Level 3</td>
-                        <td><a href="https://www.ustatennis.com" target="_blank">View</a></td>
-                    </tr>
+                    <tr class="loading-row"><td colspan="8">Loading tournaments…</td></tr>
                 </tbody>
             </table>
             </div>
@@ -695,6 +740,7 @@
 
     <footer>
         <p>&copy; 2026 Junior Tennis Tournament Hub. All rights reserved. | Last Updated: April 5, 2026</p>
+        <p>&copy; 2026 Tournament Hub. All rights reserved. | Data sourced from the USTA API</p>
     </footer>
 
 </body>
